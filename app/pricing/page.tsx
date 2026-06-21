@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 const PLANS = [
   {
@@ -112,15 +113,16 @@ export default function PricingPage() {
               ))}
             </ul>
 
-            <button
-              className={`w-full py-3 rounded-lg font-bold transition-all ${
+            <Link
+              href={`/payment/usdt?plan=${plan.tier}`}
+              className={`block w-full py-3 rounded-lg font-bold text-center transition-all ${
                 plan.tier === "free"
                   ? "bg-gray-700 text-gray-300"
                   : `bg-gradient-to-r ${plan.color} text-white hover:scale-105`
               }`}
             >
               {plan.cta}
-            </button>
+            </Link>
           </div>
         ))}
       </section>
