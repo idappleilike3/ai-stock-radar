@@ -43,39 +43,43 @@ export default function StockDetailPage() {
   const [stock, setStock] = useState<StockDetail | null>(null);
 
   useEffect(() => {
-    // 模擬資料（真實部署時從 API 抓）
-    setStock({
-      ticker: ticker,
-      name: "示例股票",
-      market: "TW",
-      current_price: 245.5,
-      change_pct: 3.2,
-
-      entry_zone: "240 ~ 250",
-      stop_loss: 228,
-      target1: 280,
-      target2: 312,
-      win_rate: "65-75%",
-      risk_level: "中等",
-      tech_score: 22,
-      chip_score: 18,
-      fund_score: 12,
-      theme_score: 13,
-      institutional_net: "+15,230 張",
-      industry_trend: "AI 伺服器爆發",
-      ai_total: 82,
-
-      why_pick: "突破 60 日新高 + 法人連 3 日買超 + 月線轉強 + 量能放大 2.3x",
-      pattern: "平台整理後帶量突破，屬於中期趨勢啟動型態",
-      ma_position: "5MA > 10MA > 20MA > 60MA，均線完美多頭排列",
-      volume_change: "近 5 日均量較前 20 日放大 2.3 倍，主力明顯進場",
-      chip_concentration: "持股集中度 68%，前 20 大股東持有穩定",
-      institutional_buy_sell: "外資 +8,500 張、投信 +4,200 張、自營商 +2,530 張，合計 +15,230 張（連 3 日買超）",
-      financial_growth: "近 3 月營收年增 28%，月增 12%，基本面轉強",
-      theme_industry: "AI 伺服器 + ASIC 雙題材，受惠於 hyperscaler 訂單",
-      entry_strategy: "建議分 3 批進場：第 1 批 1/3 在 240-245，第 2 批 1/3 在 235-240 回測 5MA，第 3 批 1/3 在突破新高加碼",
-      ai_risk_alert: "⚠️ 風險點：股價已漲 35%，距 60 日均線偏離 18%，需嚴設停損 228。爆量後若量縮需減倉。",
-    });
+    fetch(`/api/stock/${ticker}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          const s = data.stock;
+          setStock({
+            ticker: s.ticker,
+            name: s.name,
+            market: s.market,
+            current_price: s.current_price,
+            change_pct: s.change_pct,
+            entry_zone: s.entry_zone,
+            stop_loss: parseFloat(s.stop_loss),
+            target1: parseFloat(s.target1),
+            target2: parseFloat(s.target2),
+            win_rate: "60-70%",
+            risk_level: "中等",
+            tech_score: s.tech_score,
+            chip_score: 0,
+            fund_score: 0,
+            theme_score: 0,
+            institutional_net: "需 FinMind token",
+            industry_trend: "半導體",
+            ai_total: s.ai_total,
+            why_pick: s.new_high_60 ? "創 60 日新高" : "技術面轉強",
+            pattern: s.ma_position,
+            ma_position: s.ma_position,
+            volume_change: "見 K 線圖",
+            chip_concentration: "持股集中度待查",
+            institutional_buy_sell: "需 FinMind token",
+            financial_growth: "需 FinMind token",
+            theme_industry: "AI / 半導體",
+            entry_strategy: `進場 ${s.entry_zone}，停損 ${s.stop_loss}，目標 ${s.target1}`,
+            ai_risk_alert: "請嚴設停損，不保證獲利",
+          });
+        }
+      });
   }, [ticker]);
 
   if (!stock) return <div className="p-8 text-white">載入中...</div>;

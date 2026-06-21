@@ -2,6 +2,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+interface Index {
+  name: string;
+  value: number;
+  change: number;
+  change_pct: number;
+}
+
 const SECTIONS = [
   {
     flag: "🇹🇼",
@@ -36,14 +43,25 @@ const SECTIONS = [
 ];
 
 export default function Home() {
-  const [indices, setIndices] = useState([
-    { name: "台灣加權", value: 22568.45, change: 156.32, pct: 0.70 },
-    { name: "櫃買指數", value: 261.78, change: 1.85, pct: 0.71 },
-    { name: "道瓊工業", value: 39142.39, change: -86.06, pct: -0.22 },
-    { name: "S&P 500", value: 5464.62, change: -2.14, pct: -0.04 },
-    { name: "那斯達克", value: 17689.36, change: -49.91, pct: -0.28 },
-    { name: "恆生指數", value: 18328.38, change: 95.46, pct: 0.52 },
+  const [indices, setIndices] = useState<Index[]>([
+    { name: "台灣加權", value: 0, change: 0, change_pct: 0 },
+    { name: "櫃買指數", value: 0, change: 0, change_pct: 0 },
+    { name: "道瓊工業", value: 0, change: 0, change_pct: 0 },
+    { name: "S&P 500", value: 0, change: 0, change_pct: 0 },
+    { name: "那斯達克", value: 0, change: 0, change_pct: 0 },
+    { name: "恆生指數", value: 0, change: 0, change_pct: 0 },
   ]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/indices")
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) setIndices(data.indices);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   return (
     <main className="min-h-screen p-8">
@@ -66,14 +84,22 @@ export default function Home() {
 
       {/* 大盤指數 */}
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-4 text-center text-yellow-400">📊 即時大盤指數</h2>
+        <h2 className="text-2xl font-bold mb-4 text-center text-yellow-400">
+          📊 即時大盤指數 {loading && <span className="text-xs text-gray-500">(載入中...)</span>}
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 max-w-6xl mx-auto">
           {indices.map((idx) => (
             <div key={idx.name} className="card text-center">
               <div className="text-xs text-gray-400 mb-1">{idx.name}</div>
-              <div className="text-xl font-bold">{idx.value.toLocaleString()}</div>
-              <div className={`text-sm ${idx.pct >= 0 ? "text-green-400" : "text-red-400"}`}>
-                {idx.pct >= 0 ? "▲" : "▼"} {idx.pct >= 0 ? "+" : ""}{idx.change.toFixed(2)} ({idx.pct >= 0 ? "+" : ""}{idx.pct.toFixed(2)}%)
+              <div className="text-xl font-bold">
+                {idx.value > 0 ? idx.value.toLocaleString() : "--"}
+              </div>
+              <div className={`text-sm ${idx.change_pct >= 0 ? "text-green-400" : "text-red-400"}`}>
+                {idx.value > 0 ? (
+                  <>
+                    {idx.change_pct >= 0 ? "▲" : "▼"} {idx.change >= 0 ? "+" : ""}{idx.change.toFixed(2)} ({idx.change_pct >= 0 ? "+" : ""}{idx.change_pct.toFixed(2)}%)
+                  </>
+                ) : "--"}
               </div>
             </div>
           ))}
