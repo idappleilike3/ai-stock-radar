@@ -6,63 +6,71 @@ export async function GET(
 ) {
   const ticker = params.ticker;
   try {
-    const yahooFinance = (await import("yahoo-finance2")).default;
-    const suffix = /^\d+$/.test(ticker) ? ".TW" : "";
-    const symbol = ticker + suffix;
+    const symbol = /^\d+$/.test(ticker) ? `${ticker}.TW` : ticker;
 
-    const quote = await yahooFinance.quote(symbol);
-
-    // 抓近 60 日歷史計算技術指標
-    const end = new Date();
-    const start = new Date(end.getTime() - 90 * 24 * 60 * 60 * 1000);
-    const history = await yahooFinance.historical(symbol, {
-      period1: start,
-      period2: end,
-      interval: "1d",
-    });
-
-    // 簡單技術指標
-    let tech_score = 0;
-    let ma_position = "";
-    if (history.length >= 60) {
-      const close = history.map((h: any) => h.close);
-      const ma5 = close.slice(-5).reduce((a: number, b: number) => a + b, 0) / 5;
-      const ma20 = close.slice(-20).reduce((a: number, b: number) => a + b, 0) / 20;
-      const ma60 = close.slice(-60).reduce((a: number, b: number) => a + b, 0) / 60;
-      const cur = close[close.length - 1];
-      ma_position = cur > ma5 ? "站穩 5MA" : cur < ma5 ? "跌破 5MA" : "";
-      ma_position += cur > ma20 ? " + 站穩月線" : "";
-      ma_position += ma5 > ma20 ? " + 短期多頭" : "";
-      if (cur > ma5 && ma5 > ma20 && ma20 > ma60) tech_score += 20;
-      else if (cur > ma20 && ma20 > ma60) tech_score += 12;
+    // 抓 60 日歷史
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=3mo&interval=1d`;
+    const resp = await fetch(url, { next: { revalidate: 300 } });
+    if (!resp.ok) {
+      return NextResponse.json({ success: false, error: "無法取得報價" }, { status: 500 });
+    }
+    const data = await resp.json();
+    const result = data.chart?.result?.[0];
+    if (!result) {
+      return NextResponse.json({ success: false, error: "查無此股票" }, { status: 404 });
     }
 
-    const high_60 = history.length >= 60
-      ? Math.max(...history.slice(-60).map((h: any) => h.high))
-      : quote.regularMarketDayHigh || 0;
-    const new_high = (quote.regularMarketPrice || 0) >= high_60 * 0.98;
+    const meta = result.meta;
+    const closes = result.indicators?.quote?.[0]?.close || [];
+    const validCloses = closes.filter((c: number | null) => c !== null);
+    const cur = validCloses[validCloses.length - 1] || 0;
+
+    // 計算 MA
+    const ma5 = validCloses.slice(-5).reduce((a: number, b: number) => a + b, 0) / 5;
+    const ma20 = validCloses.slice(-20).reduce((a: number, b: number) => a + b, 0) / 20;
+    const ma60 = validCloses.slice(-60).reduce((a: number, b: number) => a + b, 0) / Math.min(60, validCloses.length);
+
+    let tech_score = 0;
+    let ma_position = "中性";
+    if (cur > ma5 && ma5 > ma20 && ma20 > ma60) {
+      tech_score = 22;
+      ma_position = "完美多頭排列";
+    } else if (cur > ma20 && ma20 > ma60) {
+      tech_score = 15;
+      ma_position = "站穩月線 + 季線向上";
+    } else if (cur > ma20) {
+      tech_score = 8;
+      ma_position = "站穩月線";
+    } else if (cur > ma5) {
+      tech_score = 4;
+      ma_position = "站穩 5MA";
+    } else {
+      ma_position = "跌破 5MA";
+    }
+
+    const high_60 = Math.max(...validCloses);
+    const new_high = cur >= high_60 * 0.98;
 
     return NextResponse.json({
       success: true,
       stock: {
         ticker,
-        name: quote.longName || quote.shortName || ticker,
-        market: suffix ? "TW" : "US",
-        current_price: quote.regularMarketPrice || 0,
-        change_pct: quote.regularMarketChangePercent || 0,
-        volume: quote.regularMarketVolume || 0,
-        market_cap: quote.marketCap || 0,
-        entry_zone: `${(quote.regularMarketPrice * 0.98).toFixed(2)} ~ ${(quote.regularMarketPrice * 1.02).toFixed(2)}`,
-        stop_loss: (quote.regularMarketPrice * 0.93).toFixed(2),
-        target1: (quote.regularMarketPrice * 1.14).toFixed(2),
-        target2: (quote.regularMarketPrice * 1.27).toFixed(2),
+        name: meta.longName || meta.shortName || symbol,
+        market: /^\d+$/.test(ticker) ? "TW" : "US",
+        current_price: cur,
+        change_pct: ((cur - meta.chartPreviousClose) / meta.chartPreviousClose * 100) || 0,
+        change: cur - meta.chartPreviousClose,
+        volume: meta.regularMarketVolume || 0,
+        market_cap: meta.marketCap || 0,
+        currency: meta.currency || "TWD",
+        entry_zone: `${(cur * 0.98).toFixed(2)} ~ ${(cur * 1.02).toFixed(2)}`,
+        stop_loss: (cur * 0.93).toFixed(2),
+        target1: (cur * 1.14).toFixed(2),
+        target2: (cur * 1.27).toFixed(2),
         ai_total: Math.min(85, 50 + tech_score + (new_high ? 15 : 0)),
         tech_score,
         ma_position,
         new_high_60: new_high,
-        ipo_year: quote.firstTradeDateMilliseconds
-          ? new Date(quote.firstTradeDateMilliseconds).getFullYear()
-          : null,
       },
       timestamp: new Date().toISOString(),
     });

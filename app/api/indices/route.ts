@@ -1,36 +1,45 @@
 import { NextResponse } from "next/server";
 
-// 真實大盤指數抓取
+// 用 Yahoo Finance 公開 API（不需 token）
 const INDICES = [
   { ticker: "^TWII", name: "台灣加權" },
-  { ticker: "IXC", name: "櫃買指數" },  // fallback
   { ticker: "^DJI", name: "道瓊工業" },
   { ticker: "^GSPC", name: "S&P 500" },
   { ticker: "^IXIC", name: "那斯達克" },
   { ticker: "^HSI", name: "恆生指數" },
 ];
 
-export async function GET() {
+async function fetchQuote(ticker: string) {
   try {
-    // 用 yahoo-finance2 或 yfinance API
-    const yahooFinance = (await import("yahoo-finance2")).default;
-    const results = await Promise.all(
-      INDICES.map(async (idx) => {
-        try {
-          const quote = await yahooFinance.quote(idx.ticker);
-          return {
-            name: idx.name,
-            value: quote.regularMarketPrice || 0,
-            change: quote.regularMarketChange || 0,
-            change_pct: quote.regularMarketChangePercent || 0,
-          };
-        } catch {
-          return { name: idx.name, value: 0, change: 0, change_pct: 0 };
-        }
-      })
+    const resp = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=2d&interval=1d`,
+      { next: { revalidate: 60 } }
     );
-    return NextResponse.json({ success: true, indices: results, timestamp: new Date().toISOString() });
-  } catch (e: any) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    if (!resp.ok) return { value: 0, change: 0, change_pct: 0 };
+    const data = await resp.json();
+    const meta = data.chart?.result?.[0]?.meta;
+    if (!meta) return { value: 0, change: 0, change_pct: 0 };
+    return {
+      value: meta.regularMarketPrice || 0,
+      change: meta.regularMarketPrice - meta.chartPreviousClose || 0,
+      change_pct: ((meta.regularMarketPrice - meta.chartPreviousClose) / meta.chartPreviousClose * 100) || 0,
+    };
+  } catch {
+    return { value: 0, change: 0, change_pct: 0 };
   }
+}
+
+export async function GET() {
+  const results = await Promise.all(
+    INDICES.map(async (idx) => ({
+      name: idx.name,
+      ticker: idx.ticker,
+      ...(await fetchQuote(idx.ticker)),
+    }))
+  );
+  return NextResponse.json({
+    success: true,
+    indices: results,
+    timestamp: new Date().toISOString(),
+  });
 }
