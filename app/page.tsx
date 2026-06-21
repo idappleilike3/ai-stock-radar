@@ -135,7 +135,13 @@ export default function Home() {
         <h2 className="text-3xl font-bold mb-4 text-pink-400 border-b border-pink-500/30 pb-2">
           👑 VIP 自選股 + 推播
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Link href="/portfolio" className="card block border-2 border-yellow-400 relative">
+            <span className="absolute top-2 right-2 text-xs px-2 py-1 bg-yellow-500 text-black rounded font-bold">HOT</span>
+            <div className="text-4xl mb-3">🩺</div>
+            <h3 className="text-lg font-bold mb-1">AI 持股健檢</h3>
+            <p className="text-sm text-gray-400">輸入持股 → 立刻告訴你續抱/停利/停損/減碼</p>
+          </Link>
           <Link href="/vip" className="card block">
             <div className="text-4xl mb-3">📊</div>
             <h3 className="text-lg font-bold mb-1">VIP 自選股追蹤</h3>
