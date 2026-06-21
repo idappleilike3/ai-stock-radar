@@ -1,5 +1,29 @@
 import { NextResponse } from "next/server";
 
+// 台股中文名稱對照表（fallback 當 Yahoo 沒回傳名稱時使用）
+const TW_NAMES: Record<string, string> = {
+  "2330": "台積電", "2317": "鴻海", "2454": "聯發科", "2308": "台達電",
+  "2303": "聯電", "2379": "瑞昱", "3034": "聯詠", "3711": "日月光投控",
+  "6669": "緯穎", "3529": "力旺", "3443": "創意", "5347": "世界",
+  "8299": "群聯", "6531": "愛普", "2382": "廣達", "2376": "技嘉",
+  "2324": "仁寶", "6213": "聯茂", "3017": "奇鋐", "3661": "世芯-KY",
+  "2344": "華邦電", "2408": "南亞科", "2313": "華通", "2357": "華碩",
+  "3037": "欣興", "4958": "臻鼎-KY", "2368": "金像電", "3189": "景碩",
+  "2881": "富邦金", "2882": "國泰金", "2884": "玉山金", "2885": "元大金",
+  "2886": "兆豐金", "2603": "長榮", "2609": "陽明", "2615": "萬海",
+  "2002": "中鋼", "1301": "台塑", "1303": "南亞", "1326": "台化",
+  "3293": "鑫豪", "4763": "材料-KY", "6655": "科定", "8069": "元太",
+};
+
+function getDisplayName(ticker: string, apiName?: string): string {
+  // 優先順序：API 回傳名稱 → 中文對照表 → 代號
+  if (apiName && !apiName.includes(".TW") && apiName.length > 3) {
+    return apiName;
+  }
+  const cleanTicker = ticker.replace(".TW", "");
+  return TW_NAMES[cleanTicker] || cleanTicker;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { ticker: string } }
@@ -55,7 +79,8 @@ export async function GET(
       success: true,
       stock: {
         ticker,
-        name: meta.longName || meta.shortName || symbol,
+        name: meta.longName || meta.shortName || symbol.replace(".TW", ""),
+        display_name: getDisplayName(ticker, meta.longName || meta.shortName),
         market: /^\d+$/.test(ticker) ? "TW" : "US",
         current_price: cur,
         change_pct: ((cur - meta.chartPreviousClose) / meta.chartPreviousClose * 100) || 0,

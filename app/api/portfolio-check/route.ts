@@ -6,6 +6,17 @@ interface Holding {
   unit: "股" | "張";
 }
 
+const TW_NAMES: Record<string, string> = {
+  "2330": "台積電", "2317": "鴻海", "2454": "聯發科", "2308": "台達電",
+  "2303": "聯電", "2379": "瑞昱", "3034": "聯詠", "2344": "華邦電",
+  "2408": "南亞科", "2885": "元大金", "2886": "兆豐金", "3293": "鑫豪",
+};
+
+function getName(ticker: string, apiName?: string): string {
+  if (apiName && !apiName.includes(".TW") && apiName.length > 3) return apiName;
+  return TW_NAMES[ticker] || ticker;
+}
+
 async function fetchStock(ticker: string) {
   try {
     const symbol = /^\d+$/.test(ticker) ? `${ticker}.TW` : ticker;
@@ -95,7 +106,7 @@ export async function POST(request: Request) {
 
         results.push({
           ticker: h.ticker,
-          name: meta.longName || meta.shortName || h.ticker,
+          name: getName(h.ticker, meta.longName || meta.shortName),
           cost,
           current: price,
           shares: h.shares,

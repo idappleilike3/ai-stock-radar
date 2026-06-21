@@ -2,29 +2,90 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background: #0a0e27;
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #131826;
+  --bg-card: #1a1f35;
+  --border: #2a3142;
+  --text-primary: #e4e8f1;
+  --text-secondary: #8b94a8;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  --accent-blue: #3b82f6;
+  --accent-yellow: #f59e0b;
+  --accent-purple: #a855f7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+.font-mono {
+  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", "Courier New", monospace;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+.glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+.glow-yellow {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.card {
-  background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.05) 100%);
-  border: 1px solid rgba(99,102,241,0.3);
-  border-radius: 16px;
-  padding: 24px;
-  transition: all 0.3s;
+.score-circle {
+  background: conic-gradient(from 0deg, #f59e0b 0%, #f59e0b var(--p), #1a1f35 var(--p));
+  border-radius: 50%;
 }
 
-.card:hover {
-  border-color: rgba(245,158,11,0.6);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(245,158,11,0.15);
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.live-dot {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0e1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3142;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4152;
 }
