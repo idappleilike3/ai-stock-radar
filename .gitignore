@@ -27,3 +27,5 @@ yarn-error.log*
 next-env.d.ts
 *.log
 .env.local
+.vercel
+deploy-*.ps1  # 部署腳本常含明文 token，絕不 commit

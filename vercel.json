@@ -2,12 +2,19 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "buildCommand": "next build",
-  "outputDirectory": ".next",
   "installCommand": "npm install",
   "crons": [
     {
+      "path": "/api/cron/us-stocks",
+      "schedule": "0 7 * * 1-5"
+    },
+    {
       "path": "/api/cron/daily-pick",
       "schedule": "0 8 * * 1-5"
+    },
+    {
+      "path": "/api/cron/after-market",
+      "schedule": "0 20 * * 1-5"
     }
   ]
 }
